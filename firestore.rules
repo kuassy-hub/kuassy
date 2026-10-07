@@ -1,0 +1,117 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Admin verified against trusted admin email or admins collection
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email == "henrikouassi1414@gmail.com" && request.auth.token.email_verified == true)
+      );
+    }
+
+    function isValidItem(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+        (!('cat' in data) || (data.cat is string && data.cat.size() <= 100)) &&
+        (!('price' in data) || (data.price is string && data.price.size() <= 50)) &&
+        (!('desc' in data) || (data.desc is string && data.desc.size() <= 2000)) &&
+        (!('stock' in data) || data.stock == null || data.stock is number) &&
+        (!('visible' in data) || data.visible is bool);
+    }
+
+    function isValidSupplierPrivate(data) {
+      return (!('supplierName' in data) || (data.supplierName is string && data.supplierName.size() <= 200)) &&
+        (!('supplierPhone' in data) || (data.supplierPhone is string && data.supplierPhone.size() <= 50));
+    }
+
+    function isValidOrder(data) {
+      return data.itemName is string && data.itemName.size() > 0 && data.itemName.size() <= 200 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+        data.tel is string && data.tel.size() >= 6 && data.tel.size() <= 30 &&
+        data.status in ['À confirmer', 'Confirmée', 'Livrée'] &&
+        (!('deliveryAddress' in data) || (data.deliveryAddress is string && data.deliveryAddress.size() <= 300)) &&
+        (!('clientNote' in data) || (data.clientNote is string && data.clientNote.size() <= 1000));
+    }
+
+    function isValidBanned(data) {
+      return data.tel is string && data.tel.size() >= 6 && data.tel.size() <= 30 &&
+        (!('note' in data) || (data.note is string && data.note.size() <= 300));
+    }
+
+    function isValidSettings(data) {
+      return (!('shop' in data) || (data.shop is string && data.shop.size() <= 100)) &&
+        (!('wa' in data) || (data.wa is string && data.wa.size() <= 50)) &&
+        (!('theme' in data) || (data.theme is string && data.theme.size() <= 50)) &&
+        (!('bannerNotice' in data) || (data.bannerNotice is string && data.bannerNotice.size() <= 300));
+    }
+
+    // 1. Items catalog
+    match /items/{itemId} {
+      allow get: if isValidId(itemId);
+      allow list: if true;
+      allow create, update: if isValidId(itemId) && isAdmin() && isValidItem(incoming());
+      allow delete: if isValidId(itemId) && isAdmin();
+    }
+
+    // 2. Supplier confidential data (Admin ONLY)
+    match /supplierPrivate/{itemId} {
+      allow read: if isValidId(itemId) && isAdmin();
+      allow create, update: if isValidId(itemId) && isAdmin() && isValidSupplierPrivate(incoming());
+      allow delete: if isValidId(itemId) && isAdmin();
+    }
+
+    // 3. Customer Orders
+    match /orders/{orderId} {
+      allow get, list: if isAdmin();
+      // Public customer checkout
+      allow create: if isValidId(orderId) && isValidOrder(incoming()) && incoming().status == 'À confirmer';
+      // Admin status update & deletion
+      allow update: if isValidId(orderId) && isAdmin() && isValidOrder(incoming());
+      allow delete: if isValidId(orderId) && isAdmin();
+    }
+
+    // 4. Banned phone numbers
+    match /banned/{bannedId} {
+      allow read, list: if true;
+      allow create, update: if isValidId(bannedId) && isAdmin() && isValidBanned(incoming());
+      allow delete: if isValidId(bannedId) && isAdmin();
+    }
+
+    // 5. Boutique Settings
+    match /settings/{settingId} {
+      allow read, list: if true;
+      allow create, update: if isValidId(settingId) && isAdmin() && isValidSettings(incoming());
+      allow delete: if isValidId(settingId) && isAdmin();
+    }
+
+    // 6. Admins
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && isSignedIn() && request.auth.uid == adminId;
+      allow list: if isAdmin();
+      allow write: if false;
+    }
+  }
+}

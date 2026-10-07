@@ -1,0 +1,8 @@
+{
+  "name": "KuassyShop — Boutique en Ligne & Administration",
+  "description": "Application e-commerce complète avec vitrine boutique interactive, commandes WhatsApp, gestion des stocks, photos, fournisseurs et tableau de bord administrateur en temps réel.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,217 @@
+{
+  "entities": {
+    "Item": {
+      "title": "Item",
+      "description": "Un article ou produit vendu dans la boutique",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Nom du produit",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "cat": {
+          "type": "string",
+          "description": "Catégorie du produit",
+          "maxLength": 100
+        },
+        "price": {
+          "type": "string",
+          "description": "Prix affiché",
+          "maxLength": 50
+        },
+        "desc": {
+          "type": "string",
+          "description": "Description détaillée",
+          "maxLength": 2000
+        },
+        "stock": {
+          "type": "number",
+          "description": "Quantité en stock disponible"
+        },
+        "imgs": {
+          "type": "array",
+          "description": "Liste des URLs ou dataURLs des photos (max 4)"
+        },
+        "img": {
+          "type": "string",
+          "description": "Image principale"
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "Si le produit est visible en vitrine publique"
+        },
+        "ts": {
+          "type": "number",
+          "description": "Timestamp de création"
+        }
+      },
+      "required": ["name"]
+    },
+    "SupplierPrivate": {
+      "title": "SupplierPrivate",
+      "description": "Informations confidentielles du fournisseur pour un article",
+      "type": "object",
+      "properties": {
+        "supplierName": {
+          "type": "string",
+          "description": "Nom ou société du fournisseur",
+          "maxLength": 200
+        },
+        "supplierPhone": {
+          "type": "string",
+          "description": "Téléphone WhatsApp du fournisseur",
+          "maxLength": 50
+        }
+      }
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Commande passée par un client",
+      "type": "object",
+      "properties": {
+        "itemName": {
+          "type": "string",
+          "description": "Nom de l'article commandé",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "itemId": {
+          "type": "string",
+          "description": "Identifiant de l'article",
+          "maxLength": 100
+        },
+        "price": {
+          "type": "string",
+          "description": "Prix au moment de la commande",
+          "maxLength": 50
+        },
+        "name": {
+          "type": "string",
+          "description": "Nom complet du client",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "tel": {
+          "type": "string",
+          "description": "Numéro de téléphone WhatsApp du client",
+          "minLength": 6,
+          "maxLength": 30
+        },
+        "status": {
+          "type": "string",
+          "description": "Statut de la commande",
+          "enum": ["À confirmer", "Confirmée", "Livrée"]
+        },
+        "deliveryAddress": {
+          "type": "string",
+          "description": "Adresse ou commune de livraison",
+          "maxLength": 300
+        },
+        "clientNote": {
+          "type": "string",
+          "description": "Instructions particulières du client",
+          "maxLength": 1000
+        },
+        "ts": {
+          "type": "number",
+          "description": "Timestamp de la commande"
+        }
+      },
+      "required": ["itemName", "name", "tel", "status", "ts"]
+    },
+    "BannedUser": {
+      "title": "BannedUser",
+      "description": "Numéro de téléphone bloqué",
+      "type": "object",
+      "properties": {
+        "tel": {
+          "type": "string",
+          "description": "Numéro normalisé",
+          "minLength": 6,
+          "maxLength": 30
+        },
+        "note": {
+          "type": "string",
+          "description": "Motif du blocage",
+          "maxLength": 300
+        },
+        "ts": {
+          "type": "number",
+          "description": "Date du blocage"
+        }
+      },
+      "required": ["tel"]
+    },
+    "ShopSettings": {
+      "title": "ShopSettings",
+      "description": "Configuration générale de la boutique",
+      "type": "object",
+      "properties": {
+        "shop": {
+          "type": "string",
+          "description": "Nom de la boutique",
+          "maxLength": 100
+        },
+        "wa": {
+          "type": "string",
+          "description": "Numéro WhatsApp du marchand",
+          "maxLength": 50
+        },
+        "theme": {
+          "type": "string",
+          "description": "Thème visuel actif",
+          "maxLength": 50
+        },
+        "bannerNotice": {
+          "type": "string",
+          "description": "Bandeau d'annonce",
+          "maxLength": 300
+        }
+      }
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Administrateur avec privilèges boutique",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Email de l'administrateur"
+        },
+        "role": {
+          "type": "string",
+          "description": "Rôle administrateur"
+        }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/items/{itemId}": {
+      "schema": { "$ref": "#/entities/Item" },
+      "description": "Catalogue des produits de la boutique"
+    },
+    "/supplierPrivate/{itemId}": {
+      "schema": { "$ref": "#/entities/SupplierPrivate" },
+      "description": "Données fournisseurs privées réservées à l'administrateur"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Commandes passées par les clients"
+    },
+    "/banned/{bannedId}": {
+      "schema": { "$ref": "#/entities/BannedUser" },
+      "description": "Liste noire des numéros bannis"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/ShopSettings" },
+      "description": "Paramètres et personnalisation de la boutique"
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Comptes administrateurs autorisés"
+    }
+  }
+}
